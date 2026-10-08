@@ -1,0 +1,25 @@
+name: Verify OpenAI MCP domain challenge
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/verify-openai-domain.yml
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public challenge response
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://algoart-composition-plugin.onrender.com/.well-known/openai-apps-challenge"
+          for attempt in 1 2 3 4 5 6; do
+            status=$(curl -sSL --max-time 45 -o /tmp/challenge -w '%{http_code}' "$URL" || true)
+            if [[ "$status" == "200" ]]; then break; fi
+            sleep 10
+          done
+          test "$status" = "200"
+          actual=$(sha256sum /tmp/challenge | cut -d' ' -f1)
+          # Compare digest instead of logging the challenge token.
+          test "$actual" = "7b70690d9880c90b84ab2167c8cab1a2634ba6bb22d7809fc7a8c747219c9cd2"
+          printf 'Challenge URL: HTTP 200; response: exact token digest match.\n'
