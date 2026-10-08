@@ -107,5 +107,5 @@ with concat.open("w") as fp:
     for path,duration in slides:fp.write(f"file '{path.name}'\nduration {duration}\n")
     fp.write(f"file '{slides[-1][0].name}'\n")
 video=Path("algoart-composition-review-demo.mp4")
-subprocess.run(["ffmpeg","-hide_banner","-loglevel","error","-y","-f","concat","-safe","0","-i",str(concat),"-vf","fps=24,format=yuv420p","-c:v","libx264","-preset","fast","-crf","24","-movflags","+faststart",str(video)],check=True)
+subprocess.run([__import__("imageio_ffmpeg").get_ffmpeg_exe(),"-hide_banner","-loglevel","error","-y","-f","concat","-safe","0","-i",str(concat),"-vf","fps=24,format=yuv420p","-c:v","libx264","-preset","fast","-crf","24","-movflags","+faststart",str(video)],check=True)
 print(json.dumps({"slides":len(slides),"duration_seconds":sum(t for _,t in slides),"bytes":video.stat().st_size,"sha256":hashlib.sha256(video.read_bytes()).hexdigest(),"preview_modes":[g["mode"] for g in fridge],"deterministic":same}),flush=True)
