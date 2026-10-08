@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare video dependencies
         run: |
-          python -m pip install --user Pillow
-          ffmpeg -version | head -2
+          python -m pip install --user Pillow imageio-ffmpeg
+          python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())"
       - name: Demonstrate the LIVE MCP tools and render video
         run: python scripts/create_review_demo.py
       - name: Publish public recording to GitHub Release
