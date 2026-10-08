@@ -1,0 +1,32 @@
+name: Record ALGO/ART live MCP demonstration
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/review-demo.yml
+permissions:
+  contents: write
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare video dependencies
+        run: |
+          python -m pip install --user Pillow
+          ffmpeg -version | head -2
+      - name: Demonstrate the LIVE MCP tools and render video
+        run: python scripts/create_review_demo.py
+      - name: Publish public recording to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "algoart-review-demo-v1" >/dev/null 2>&1; then
+            gh release upload "algoart-review-demo-v1" "algoart-composition-review-demo.mp4" --clobber
+          else
+            gh release create "algoart-review-demo-v1" "algoart-composition-review-demo.mp4" \
+              --title "ALGO/ART · Composition — review walkthrough" \
+              --notes "Automated video made from actual live original ALGO/ART V6 MCP tool results. This demonstrates preview generation, selected PNGs, deterministic replay, and bounded capabilities. It is NOT a captured ChatGPT session and does not claim the native image-generation handoff has been verified."
+          fi
+          gh release view "algoart-review-demo-v1" --json url,assets
