@@ -43,3 +43,11 @@ jobs:
             -X POST https://algoart-composition-plugin.onrender.com/mcp \
             -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"show_composition_picker","arguments":{"subject":"A fridge full of food"}}}' -o picker.json
           node -e "const d=require('./picker.json');const r=d.result?.structuredContent;console.log({error:d.result?.content?.[0]?.text,guideCount:r?.guides?.length,modes:r?.guides?.map(x=>x.mode),imagePrefixes:r?.guides?.map(x=>x.preview?.slice(0,22))});if(!r||r.guides.length!==3||!r.guides.every(x=>x.preview.startsWith('data:image/png;base64,')))process.exit(1)"
+
+      - name: Retrieve selected full-size reference PNG
+        run: |
+          curl --fail --silent --show-error --max-time 180 \
+            -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+            -X POST https://algoart-composition-plugin.onrender.com/mcp \
+            -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_composition_guide","arguments":{"mode":"geometric","seed":"CHAT-DEBUG-007","subject":"A fridge full of food"}}}' -o selected.json
+          node -e "const d=require('./selected.json');const c=d.result?.content||[];const im=c.find(x=>x.type==='image');if(!im){console.error(d.result||d);process.exit(1)}const b=Buffer.from(im.data,'base64');const ok=b.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex'));console.log({png:ok,bytes:b.length,width:b.readUInt32BE(16),height:b.readUInt32BE(20),mode:d.result.structuredContent?.mode});if(!ok||b.length<10000||b.readUInt32BE(16)!==1400||b.readUInt32BE(20)!==1000)process.exit(1)"
