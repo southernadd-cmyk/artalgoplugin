@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - .github/workflows/remote-mcp-smoke.yml
+      - server.mjs
   workflow_dispatch:
 jobs:
   smoke:
