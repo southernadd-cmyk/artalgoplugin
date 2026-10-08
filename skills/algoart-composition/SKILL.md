@@ -1,0 +1,5 @@
+# ALGO/ART composition workflow
+
+When the user requests an image using ALGO/ART: (1) call `show_composition_picker` with the requested subject; (2) display the three returned original ALGO/ART previews, then wait for an explicit choice; (3) call `get_composition_guide` with the exact selected mode and seed; (4) use the returned **PNG as an image reference** for native ChatGPT image generation, never rely only on a textual prompt; (5) preserve the guide's occupied regions, proportions, focal placement and intentionally empty regions. Do not add background elements, textures, subjects or decoration to blank space. Fit the user's subject into the pre-existing occupied regions and omit elements rather than expanding beyond them.
+
+Only the original ALGO/ART V6 `window.AlgoArt.render()` may draw compositions. Do not invent another algorithm. The plugin loads this directly from the official published website. Never claim the final image was generated before native image generation actually succeeds.
