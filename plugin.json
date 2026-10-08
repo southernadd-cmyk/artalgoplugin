@@ -1,0 +1,28 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "algoart-composition",
+  "version": "0.4.0",
+  "description": "Generate images in ChatGPT using the eight original ALGO/ART golden-ratio composition algorithms, with a three-guide selector.",
+  "homepage": "https://southernadd-cmyk.github.io/algoart/",
+  "keywords": [
+    "composition",
+    "art",
+    "phi",
+    "image-generation"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "ALGO/ART · Composition",
+        "shortDescription": "Make images using genuine ALGO/ART composition",
+        "longDescription": "Pick from three original ALGO/ART V6 compositions, then have ChatGPT create an image that respects the chosen arrangement and negative space.",
+        "developerName": "ALGO/ART",
+        "websiteURL": "https://southernadd-cmyk.github.io/algoart/",
+        "category": "Productivity",
+        "capabilities": [
+          "Read"
+        ]
+      }
+    }
+  }
+}
