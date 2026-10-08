@@ -25,7 +25,7 @@ function show(){
     const b=document.createElement('button');b.type='button';b.className='choice';b.setAttribute('aria-pressed','false');
     const im=document.createElement('img');im.src=g.preview;im.alt='Original ALGO/ART '+g.title+' composition guide';
     const lbl=document.createElement('span');const strong=document.createElement('strong');strong.textContent=g.title;const sm=document.createElement('small');sm.textContent=' / '+g.seed;lbl.append(strong,sm);b.append(im,lbl);
-    b.onclick=()=>{selected=g;for(const c of el('choices').children){c.classList.remove('selected');c.setAttribute('aria-pressed','false');}b.classList.add('selected');b.setAttribute('aria-pressed','true');el('submit').disabled=false;el('status').textContent='Selected '+g.title+'. The finished image should preserve this arrangement, including its blank space.'};
+    b.onclick=()=>{selected=g;for(const c of el('choices').children){c.classList.remove('selected');c.setAttribute('aria-pressed','false');}b.classList.add('selected');b.setAttribute('aria-pressed','true');el('submit').disabled=false;el('status').textContent='Selected '+g.title+'. The guide will organise visual weight and space without acting as a clipping mask.'};
     el('choices').append(b);
   }
 }
@@ -35,7 +35,7 @@ el('form').onsubmit=async e=>{
   const subject=el('subject').value.trim()||'An expressive oil painting';
   if(!window.openai?.sendFollowUpMessage){el('status').textContent='Your ChatGPT client cannot send the selection automatically.';return;}
   busy=true;el('submit').disabled=true;el('status').textContent='Requesting the full-size original composition PNG in ChatGPT…';
-  const instruction='Use ALGO/ART · Composition. Call get_composition_guide using mode '+JSON.stringify(selected.mode)+', seed '+JSON.stringify(selected.seed)+' and subject '+JSON.stringify(subject)+'. Then generate the user-requested image using the ACTUAL returned PNG as the image reference. Preserve occupied positions, scale, and especially all negative space. Do not add background objects or decorations in empty regions. Subject: '+subject;
+  const instruction='Use ALGO/ART · Composition. Call get_composition_guide using mode '+JSON.stringify(selected.mode)+', seed '+JSON.stringify(selected.seed)+' and subject '+JSON.stringify(subject)+'. Then generate the user-requested image using the ACTUAL returned PNG as an underlying compositional reference, NOT a stencil or clipping mask. Preserve focal hierarchy, visual balance, approximate positions and relative scale of major forms, directional flow, and significant negative space. Interpret guide marks as visual masses, not separate containers. Let figures and objects overlap, merge, or extend beyond marks to make a coherent complete scene. Do not crop subjects into isolated fragments or leave artificial gaps between them. Keep major open areas visually quiet while allowing subtle continuous background where needed. Preserve spatial relationships, not exact contours. Subject: '+subject;
   try{await window.openai.sendFollowUpMessage({prompt:instruction});el('status').textContent='Sent to ChatGPT. Waiting for image generation in the conversation.';}
   catch(err){el('status').textContent='Could not send request: '+String(err?.message||err);}
   finally{busy=false;el('submit').disabled=false;}
