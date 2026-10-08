@@ -6,7 +6,7 @@ import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/st
 import {registerAppResource,registerAppTool,RESOURCE_MIME_TYPE} from '@modelcontextprotocol/ext-apps/server';
 import {z} from 'zod';
 const SOURCE='https://southernadd-cmyk.github.io/algoart/';
-const WIDGET='ui://algoart/composition-picker.html';
+const WIDGET='ui://algoart/composition-picker-v2.html';
 const HTML=readFileSync(new URL('./public/picker.html',import.meta.url),'utf8');
 const MODES={field:'Orbital Studies',spiral:'Golden Trajectories',rects:'Recursive Divisions',burst:'Radiant Systems',network:'Connected Fields',organic:'Growth Systems',geometric:'Constructed Forms',scribble:'Automatic Marks'};
 const KEYS=Object.keys(MODES);
