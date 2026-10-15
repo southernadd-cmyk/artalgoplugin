@@ -17,7 +17,7 @@ const MATERIALS={'oil-v1':'Oil Paint','watercolour-v2s':'Watercolour',
  'watercolour-v2r':'Watercolour',tissue:'Tissue & Graphite'};
 const cache=new Map();
 const LIMIT=64;
-const MAX_ACTIVE=2;
+const MAX_ACTIVE=1; // One Chromium art render at a time on Render's small instance.
 let active=0;
 const pending=[];
 function safe(text){return String(text).replace(/[&<>"']/g,c=>({
