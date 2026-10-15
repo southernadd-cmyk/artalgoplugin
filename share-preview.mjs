@@ -42,19 +42,22 @@ function canonicalToken(raw){
    return values;
  }catch(e){return null}
 }
-function metaFor(token,data){
+function metaFor(token,data,previewVersion){
  const title='ALGO/ART — '+MODES[data.mode]+' · '+data.seed;
  const material=MATERIALS[data.material]||
    (data.tissue?'Tissue & Graphite':'Marker drawing');
  const description='Original '+material+' composition by ALGO/ART. Seed '+
    data.seed+'. Open the exact artwork, explore its golden-ratio structure and remix.';
- const url=PUBLIC+'/share?c='+encodeURIComponent(token);
- const image=PUBLIC+'/share/image?c='+encodeURIComponent(token);
+ // This remains the exact page Meta scraped, rather than canonicalising
+ // the new Threads link back to the previously cached unversioned URL.
+ const version=previewVersion==='2'?'&pv=2':'';
+ const url=PUBLIC+'/share?c='+encodeURIComponent(token)+version;
+ const image=PUBLIC+'/share/image?c='+encodeURIComponent(token)+version;
  const redirect=SITE+'?c='+encodeURIComponent(token);
  return {title,description,url,image,redirect};
 }
-function htmlFor(token,data){
- const m=metaFor(token,data),e=safe;
+function htmlFor(token,data,previewVersion){
+ const m=metaFor(token,data,previewVersion),e=safe;
  return '<!doctype html><html lang="en"><head><meta charset="utf-8">'+
    '<meta name="viewport" content="width=device-width,initial-scale=1">'+
    '<title>'+e(m.title)+'</title>'+
@@ -73,7 +76,8 @@ function htmlFor(token,data){
    '<meta name="twitter:title" content="'+e(m.title)+'">'+
    '<meta name="twitter:description" content="'+e(m.description)+'">'+
    '<meta name="twitter:image" content="'+e(m.image)+'">'+
-   '<meta http-equiv="refresh" content="1;url='+e(m.redirect)+'">'+
+   // Never add <meta http-equiv="refresh"> or an HTTP Location header:
+   // some social scrapers follow those to the static GitHub Pages OG card.
    '</head><body style="margin:2rem;background:#f5f0e6;font-family:monospace">'+
    '<h1>ALGO/ART · YOUR ARTWORK</h1><p>Opening the exact artwork…</p>'+
    '<a href="'+e(m.redirect)+'">OPEN ARTWORK</a>'+
@@ -141,7 +145,8 @@ export function makeSharePreviewHandler({browser,source=SITE}){
    if(url.pathname==='/share'){
      res.writeHead(200,{'content-type':'text/html; charset=utf-8',
        'cache-control':'public, max-age=1800','x-content-type-options':'nosniff'});
-     res.end(req.method==='HEAD'?'':htmlFor(token,data));return;
+     res.end(req.method==='HEAD'?'':htmlFor(token,data,
+       url.searchParams.get('pv')==='2'?'2':null));return;
    }
    if(url.pathname==='/share/image'){
      if(req.method==='HEAD'){
