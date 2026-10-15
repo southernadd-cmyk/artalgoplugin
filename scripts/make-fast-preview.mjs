@@ -1,0 +1,19 @@
+// Generate drawing-only ALGO/ART page from real published controls and scripts.
+import {readFileSync,writeFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+const root=resolve('preview-site');
+const site=readFileSync(resolve(root,'index.html'),'utf8');
+const inputs=[...site.matchAll(/<input\b[^>]*>/gi)].map(m=>m[0]).filter(s=>/\bid="[^"]+"/.test(s));
+const selects=[...site.matchAll(/<select\b[^>]*>[\s\S]*?<\/select>/gi)].map(m=>m[0]).filter(s=>/\bid="[^"]+"/.test(s));
+const scripts=[...site.matchAll(/<script src="(js\/[^"?]+)(?:\?[^"]+)?"><\/script>/g)].map(m=>m[1]);
+const last=scripts.indexOf('js/oil-paint-v1.js');
+if(last<10||!scripts.includes('js/generator.js')||!inputs.some(x=>x.includes('id="seed"'))||
+ !selects.some(x=>x.includes('id="mode"')))throw Error('Cannot build preview: original ALGO/ART markup changed');
+const engineScripts=scripts.slice(0,last+1).map(src=>'<script src="'+src+'"></script>').join('\n');
+const boot="(function(){\n'use strict';\nconst A=window.AlgoArt,c=document.getElementById('art');\nconst names={seed:'seed',mode:'mode',orientation:'fmt',elements:'el',density:'den',complexity:'cx',negativeSpace:'neg',phiStrength:'phi',recursion:'rec',spiralInfluence:'spi',goldenAngle:'ga',nesting:'nest',pen:'pen',thickness:'th',wobble:'wob',overdraw:'od',opacity:'op',pressure:'pr',dryness:'dry',curveBias:'curve',shapeAmount:'shape',overlap:'overlap',rotation:'rot',lines:'ln',circles:'ci',rectangles:'re',polygons:'po',arcs:'ar',palette:'pal',colourCount:'cols',saturation:'sat',brightness:'bri',paper:'paper',grain:'grain'};\nconst ordered=['v',...Object.values(names),'sheet','material','fit','tissue','watercolor'];\ntry{\n const token=new URLSearchParams(location.search).get('c')||'';\n const encoded=token.replace(/-/g,'+').replace(/_/g,'/');\n const b=atob(encoded+'='.repeat((4-encoded.length%4)%4));\n const bytes=Uint8Array.from(b,c=>c.charCodeAt(0));\n const parts=new TextDecoder('utf-8',{fatal:true}).decode(bytes).split('\\x1f');\n if(parts.length!==ordered.length)throw Error('Invalid share token length');\n const p=new URLSearchParams();\n ordered.forEach((k,i)=>{if(parts[i]!=='')p.set(k,parts[i])});\n const settings={};\n for(const [name,k] of Object.entries(names)){\n   const el=document.getElementById(name);\n   if(!el)throw Error('Missing original setting: '+name);\n   const raw=p.has(k)?p.get(k):el.value;\n   settings[name]=el.type==='checkbox'?(raw==='1'||raw==='true'):el.type==='range'?Number(raw):raw;\n }\n if(!settings.seed)throw Error('Missing artwork seed');\n A.rendererVersion=Number(p.get('v')||9);\n A.phiFramingEnabled=p.get('sheet')==='phi';\n const material=p.get('material');\n const scale=0.55;\n if(material==='oil-v1'){\n   A.renderOilPaintV1(c,settings,scale,false);\n }else if(material&&material.startsWith('watercolour-')){\n   if(material==='watercolour-v2r')A.renderWatercolourV2R(c,settings,scale,false);\n   else{\n     A.watercolourV2sOptions.fitToSheet=p.get('fit')==='1';\n     A.renderWatercolourV2S(c,settings,scale,false);\n   }\n }else if(p.has('tissue')||p.has('watercolor')){\n   A.renderOil(c,settings,scale,false,Number(p.get('tissue')||p.get('watercolor')||7));\n }else{\n   A.render(c,settings,scale,false);\n }\n window.__renderedSeed=settings.seed;\n window.__artPreviewReady=true;\n}catch(e){window.__artPreviewError=String(e.stack||e);console.error('Art preview:',e)}\n})();";
+const html='<!doctype html><html><head><meta charset="utf-8"></head>'+
+ '<body><canvas id="art" width="100" height="100"></canvas>'+
+ '<div hidden>'+inputs.join('\n')+selects.join('\n')+'</div>'+
+ engineScripts+'\n<script>'+boot+'</script></body></html>';
+writeFileSync(resolve(root,'preview-fast.html'),html);
+console.log('FAST PREVIEW: '+(last+1)+' real engine scripts, '+inputs.length+' input controls, '+selects.length+' selects; no editor startup work');
