@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.mjs",
     "check": "node --check server.mjs",
-    "postinstall": "node scripts/sync-preview-source.mjs"
+    "postinstall": "node scripts/sync-preview-source.mjs && node scripts/make-fast-preview.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",
