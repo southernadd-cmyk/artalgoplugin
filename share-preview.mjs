@@ -108,10 +108,10 @@ async function imageFor(token,data,browser,source=SITE){
      await page.goto(source+'?c='+encodeURIComponent(token),
        {waitUntil:'domcontentloaded',timeout:60000});
      await page.waitForFunction(seed=>
-       document.querySelector('#seed')?.value===seed&&
-       document.querySelector('#art')?.width>=1000&&
-       document.querySelector('#statsText')?.textContent?.includes(seed),
-       data.seed,{timeout:70000});
+       window.__artPreviewReady===true&&
+       window.__renderedSeed===seed&&
+       document.querySelector('#art')?.width>=300,
+       data.seed,{timeout:18000});
      // Page script executes real ALGO/ART browser engine with exactly
      // the original material/seed/palette/paper, not a stock screenshot.
      return Buffer.from(await page.evaluate(()=>{
