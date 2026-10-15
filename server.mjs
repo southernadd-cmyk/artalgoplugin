@@ -1,4 +1,6 @@
 import {createHash} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
 import {createServer} from 'node:http';
 import {readFileSync} from 'node:fs';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -30,6 +32,9 @@ return m;}
 const PORT=Number(process.env.PORT||8787);
 // Do not navigate to public GitHub Pages during social scraping.
 // Its CDN connections have repeatedly timed out on the Render instance.
+// Loading the bundled HTML over the app's own HTTP listener timed out
+// on Render after deployment. file:// avoids navigation/network/proxy
+// entirely while retaining actual original ALGO/ART script/style files.
 const sharePreview=makeSharePreviewHandler({browser,
- source:'http://127.0.0.1:'+PORT+'/_preview-source/index.html'});
+ source:pathToFileURL(resolve('preview-site/index.html')).href});
 createServer(async(req,res)=>{const url=new URL(req.url||'/', 'http://localhost');if(await servePreviewSource(req,res,url))return;if(url.pathname==='/share'||url.pathname==='/share/image'){await sharePreview(req,res,url);return;}if(url.pathname==='/.well-known/openai-apps-challenge'){const challenge=process.env.OPENAI_APPS_CHALLENGE;if(challenge){res.writeHead(200,{'content-type':'text/plain; charset=utf-8','cache-control':'no-store'});res.end(challenge);return;}res.writeHead(404);res.end('Challenge not configured');return;}if(url.pathname==='/privacy'||url.pathname==='/terms'||url.pathname==='/support'){const urlPath=url.pathname==='/privacy'?'blob/main/docs/PRIVACY.md':url.pathname==='/terms'?'blob/main/docs/TERMS.md':'issues';res.writeHead(302,{location:'https://github.com/southernadd-cmyk/artalgoplugin/'+urlPath,'cache-control':'no-store'});res.end();return;}if(url.pathname==='/health'){res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({status:'ok',engine:'ALGO/ART V6',endpoint:'/mcp'}));return;}if(url.pathname==='/mcp'&&req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-origin':'*','access-control-allow-methods':'POST, GET, DELETE, OPTIONS','access-control-allow-headers':'content-type,authorization,mcp-session-id,mcp-protocol-version','access-control-expose-headers':'Mcp-Session-Id'});res.end();return;}if(url.pathname==='/mcp'&&['POST','GET','DELETE'].includes(req.method)){res.setHeader('access-control-allow-origin','*');res.setHeader('access-control-expose-headers','Mcp-Session-Id');const m=makeMcp(),transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined,enableJsonResponse:true});res.on('close',()=>{transport.close();m.close();});try{await m.connect(transport);await transport.handleRequest(req,res);}catch(e){console.error(e);if(!res.headersSent){res.writeHead(500);res.end('MCP server error');}}return;}res.writeHead(404);res.end('Not found');}).listen(PORT,'0.0.0.0',()=>console.log('ALGO/ART plugin listening on '+PORT));
