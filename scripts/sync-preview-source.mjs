@@ -18,8 +18,8 @@ function git(params){
 }
 try{
  git(['clone',...args]);
- git(['-C',root,'sparse-checkout','set','index.html','js','css','fonts',
-   'favicon.svg']);
+ // Cone mode includes top-level index.html and favicon automatically.
+ git(['-C',root,'sparse-checkout','set','--cone','js','css','fonts']);
  for(const file of ['index.html','js/app.js','js/generator.js',
    'js/oil-paint-v1.js','css/style.css']){
    if(!existsSync(resolve(root,file)))
