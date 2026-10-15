@@ -8,6 +8,8 @@ import {chromium} from 'playwright';
 import {makeSharePreviewHandler,sharePreviewTest} from '../share-preview.mjs';
 import {servePreviewSource} from '../preview-source-server.mjs';
 import {existsSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
 assert(existsSync('preview-site/js/oil-paint-v1.js'),
   'postinstall must sync actual Oil engine source before testing');
 const seed='OG-LOCAL-RENDER-20261016';
@@ -21,21 +23,22 @@ let server,browser,url;
 test.before(async()=>{
  browser=await chromium.launch({headless:true,args:['--no-sandbox',
    '--disable-dev-shm-usage']});
- const portSource={url:null};
- // The public sharing endpoint and static source use one local HTTP origin.
+ const bundledFileURL=pathToFileURL(resolve('preview-site/index.html')).href;
+ // Preview Chromium loads the real browser engine from local disk; no
+ // navigation to GitHub Pages or back into Render's HTTP listener.
  server=createServer(async(req,res)=>{
   const requestURL=new URL(req.url||'/', 'http://127.0.0.1');
   try{
    if(await servePreviewSource(req,res,requestURL))return;
    const handler=makeSharePreviewHandler({browser:async()=>browser,
-     source:portSource.url+'/_preview-source/index.html'});
+     source:bundledFileURL});
    await handler(req,res,requestURL);
   }catch(e){if(!res.headersSent)res.writeHead(500);res.end(String(e))}
  });
  server.listen(0,'127.0.0.1');
  await once(server,'listening');
  url='http://127.0.0.1:'+server.address().port;
- portSource.url=url;
+
 });
 test.after(async()=>{
  if(browser)await browser.close();
