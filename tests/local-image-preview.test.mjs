@@ -70,6 +70,23 @@ test('real Oil canvas renders reliable image/jpeg via local-origin Chromium', {
  const r2=await fetch(href);
  assert.equal(r2.status,200,'Cached image should stay reliably accessible');
  assert.deepEqual(Buffer.from(await r2.arrayBuffer()),body);
+
+ const preload=url+'/share/preload?c='+encodeURIComponent(token);
+ const bad=await fetch(preload,{method:'POST',headers:{'origin':'https://evil.example',
+   'content-type':'application/json'},body:JSON.stringify({jpeg:body.toString('base64')})});
+ assert.equal(bad.status,403,'Only ALGO/ART public editor may preload');
+ const upload=await fetch(preload,{
+   method:'POST',headers:{'origin':'https://southernadd-cmyk.github.io',
+    'content-type':'application/json'},
+   body:JSON.stringify({jpeg:body.toString('base64')})
+ });
+ assert.equal(upload.status,200,'Real artwork JPEG should preload into social cache');
+ const cachedAt=Date.now();
+ const cached=await fetch(href,{headers:{'user-agent':'facebookexternalhit/1.1'}});
+ assert.equal(cached.status,200);
+ assert.deepEqual(Buffer.from(await cached.arrayBuffer()),body,
+   'Social scraper did not retrieve the exact preloaded artwork bytes');
+ assert(Date.now()-cachedAt<1500,'Preloaded card must respond immediately to scrapers');
  console.log('PASS exact oil art share preview JPEG from local browser source:',{
   length:body.length,renderMs:Date.now()-t});
 });
