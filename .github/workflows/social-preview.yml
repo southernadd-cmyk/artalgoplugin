@@ -1,0 +1,26 @@
+name: Artwork-specific Open Graph previews
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'share-preview.mjs'
+      - 'server.mjs'
+      - 'tests/social-preview.test.mjs'
+      - '.github/workflows/social-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  social-card:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check safe social preview route and existing MCP server syntax
+        run: |
+          node --check server.mjs
+          node --check share-preview.mjs
+          node --test tests/social-preview.test.mjs
