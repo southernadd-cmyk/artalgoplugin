@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node --check server.mjs"
+    "check": "node --check server.mjs",
+    "postinstall": "node scripts/sync-preview-source.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",
