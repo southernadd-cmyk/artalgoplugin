@@ -2,3 +2,6 @@ node_modules/
 .playwright/
 .env
 .env.*
+
+# Exact ALGO/ART rendering snapshot mirrored during build
+preview-site/
