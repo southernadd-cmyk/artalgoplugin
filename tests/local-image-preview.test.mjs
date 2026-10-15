@@ -10,6 +10,7 @@ import {servePreviewSource} from '../preview-source-server.mjs';
 import {existsSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
+assert(existsSync('preview-site/preview-fast.html'), 'Drawing-only page must exist');
 assert(existsSync('preview-site/js/oil-paint-v1.js'),
   'postinstall must sync actual Oil engine source before testing');
 const seed='OG-LOCAL-RENDER-20261016';
@@ -23,7 +24,7 @@ let server,browser,url;
 test.before(async()=>{
  browser=await chromium.launch({headless:true,args:['--no-sandbox',
    '--disable-dev-shm-usage']});
- const bundledFileURL=pathToFileURL(resolve('preview-site/index.html')).href;
+ const bundledFileURL=pathToFileURL(resolve('preview-site/preview-fast.html')).href;
  // Preview Chromium loads the real browser engine from local disk; no
  // navigation to GitHub Pages or back into Render's HTTP listener.
  server=createServer(async(req,res)=>{
