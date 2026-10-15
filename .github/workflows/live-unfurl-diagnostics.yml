@@ -1,0 +1,21 @@
+name: Diagnose real social artwork previews
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/live-unfurl-diagnostics.mjs'
+      - '.github/workflows/live-unfurl-diagnostics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unfurl-public:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check real deployed Render social preview with three client agents
+        run: node tests/live-unfurl-diagnostics.mjs
