@@ -20,6 +20,81 @@ const LIMIT=64;
 const MAX_ACTIVE=1; // One Chromium art render at a time on Render's small instance.
 let active=0;
 const pending=[];
+
+const SHARE_ORIGIN='https://southernadd-cmyk.github.io';
+const preloadCounts=new Map();
+function rememberJPEG(token,bytes){
+ cache.delete(token);cache.set(token,bytes);
+ while(cache.size>LIMIT)cache.delete(cache.keys().next().value);
+}
+function jpegDimensions(bytes){
+ if(bytes[0]!==255||bytes[1]!==216||
+    bytes[bytes.length-2]!==255||bytes[bytes.length-1]!==217)return null;
+ let i=2;
+ while(i<bytes.length-9){
+   if(bytes[i++]!==255)continue;
+   const tag=bytes[i++];
+   if(tag===0xd8||tag===0xd9||tag===0x01)continue;
+   if(i+2>bytes.length)break;
+   const n=bytes.readUInt16BE(i);i+=2;
+   if(n<2||i+n-2>bytes.length)break;
+   if([0xc0,0xc1,0xc2,0xc3].includes(tag)&&n>=7)
+     return{height:bytes.readUInt16BE(i+1),width:bytes.readUInt16BE(i+3)};
+   i+=n-2;
+ }
+ return null;
+}
+async function acceptPreload(req,res,url){
+ const origin=req.headers.origin;
+ const headers={'access-control-allow-origin':SHARE_ORIGIN,
+   'vary':'Origin','cache-control':'no-store',
+   'x-content-type-options':'nosniff'};
+ if(origin!==SHARE_ORIGIN){
+   res.writeHead(403,headers);res.end('Origin not allowed');return;
+ }
+ if(req.method==='OPTIONS'){
+   res.writeHead(204,{...headers,
+     'access-control-allow-methods':'POST, OPTIONS',
+     'access-control-allow-headers':'content-type',
+     'access-control-max-age':'600'});res.end();return;
+ }
+ if(req.method!=='POST'){
+   res.writeHead(405,{...headers,allow:'POST, OPTIONS'});res.end();return;
+ }
+ const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'').split(',')[0].slice(0,80);
+ const now=Date.now(),rec=preloadCounts.get(ip)||{until:now+60000,count:0};
+ if(now>rec.until){rec.until=now+60000;rec.count=0}
+ rec.count++;preloadCounts.set(ip,rec);
+ if(preloadCounts.size>500)
+   for(const [key,value] of preloadCounts)if(value.until<now)preloadCounts.delete(key);
+ if(rec.count>8){
+   res.writeHead(429,headers);res.end('Too many previews');return;
+ }
+ const token=url.searchParams.get('c');
+ if(!canonicalToken(token)||Number(req.headers['content-length']||0)>420000){
+   res.writeHead(400,headers);res.end('Invalid artwork token or image size');return;
+ }
+ try{
+   let json='',size=0;
+   for await(const piece of req){
+     size+=piece.length;if(size>420000)throw Error('Payload too large');
+     json+=piece.toString('utf8');
+   }
+   const data=JSON.parse(json);
+   if(typeof data.jpeg!=='string'||data.jpeg.length>390000||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(data.jpeg))throw Error('Invalid JPEG encoding');
+   const bytes=Buffer.from(data.jpeg,'base64');
+   const dims=jpegDimensions(bytes);
+   if(!dims||dims.width!==1200||dims.height!==630||
+      bytes.length<4000||bytes.length>285000)throw Error('Invalid JPEG dimensions');
+   rememberJPEG(token,bytes);
+   res.writeHead(200,{...headers,'content-type':'application/json'});
+   res.end(JSON.stringify({ok:true,bytes:bytes.length}));
+ }catch(error){
+   res.writeHead(400,headers);res.end('Preview rejected');
+ }
+}
+
 function safe(text){return String(text).replace(/[&<>"']/g,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 })[c]);}
@@ -127,12 +202,14 @@ async function imageFor(token,data,browser,source=SITE){
      }), 'base64');
    }finally{await page.close()}
  });
- cache.set(token,bytes);
- if(cache.size>LIMIT)cache.delete(cache.keys().next().value);
+ rememberJPEG(token,bytes);
  return bytes;
 }
 export function makeSharePreviewHandler({browser,source=SITE}){
  return async function sharePreview(req,res,url){
+   if(url.pathname==='/share/preload'){
+     await acceptPreload(req,res,url);return;
+   }
    if(req.method!=='GET'&&req.method!=='HEAD'){
      res.writeHead(405,{'allow':'GET, HEAD'});res.end();return;
    }
