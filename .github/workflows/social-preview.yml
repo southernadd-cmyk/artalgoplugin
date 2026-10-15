@@ -5,6 +5,10 @@ on:
     paths:
       - 'share-preview.mjs'
       - 'server.mjs'
+      - 'preview-source-server.mjs'
+      - 'scripts/sync-preview-source.mjs'
+      - 'tests/local-image-preview.test.mjs'
+      - 'package.json'
       - 'tests/social-preview.test.mjs'
       - '.github/workflows/social-preview.yml'
   workflow_dispatch:
@@ -19,8 +23,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check safe social preview route and existing MCP server syntax
+      - name: Install and build-mirror exact ALGO/ART renderer
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Check safe routes, MCP server and static snapshot
         run: |
           node --check server.mjs
           node --check share-preview.mjs
+          node --check preview-source-server.mjs
+          node --check scripts/sync-preview-source.mjs
           node --test tests/social-preview.test.mjs
+      - name: Render actual Oil painting to shareable JPEG without GitHub Pages
+        run: node --test --test-concurrency=1 tests/local-image-preview.test.mjs
