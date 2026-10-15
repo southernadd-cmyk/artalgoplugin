@@ -48,10 +48,35 @@ test('server HTML exposes real crawler-visible artwork-specific card and click-t
  assert.match(html,/Oil Paint/);
  assert.match(html,/ART-20261015-%PHI-7/);
  assert.match(html,/location\.replace\(/);
+ assert.doesNotMatch(html,/<meta\\s+http-equiv=[\"']refresh/i,
+   'Meta/Threads must not be sent to GitHub Pages by an HTML redirect');
+ assert.doesNotMatch(html,/<link[^>]*rel=[\"']canonical[^>]*github\.io/i);
+ assert.equal(r.redirected,false,'Crawler must receive Open Graph on original 200 URL');
+ assert.equal(r.url,origin+'/share?c='+encodeURIComponent(token));
  assert(!html.includes('social-card.png'));
  const head=await fetch(origin+'/share?c='+token,{method:'HEAD'});
  assert.equal(head.status,200);
  assert.equal(await head.text(),'');
+});
+test('versioned Threads preview has its OWN canonical and image URL, no generic redirect',async()=>{
+ const url=origin+'/share?c='+encodeURIComponent(token)+'&pv=2';
+ const response=await fetch(url,{
+   headers:{'user-agent':'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'},
+   redirect:'manual'
+ });
+ assert.equal(response.status,200);
+ assert.equal(response.headers.get('location'),null);
+ const html=await response.text();
+ assert.doesNotMatch(html,/http-equiv="refresh"/i);
+ assert.match(html,/property="og:url" content="https:\/\/algoart-composition-plugin\.onrender\.com\/share\?c=[^"]+&amp;pv=2"/);
+ assert.match(html,/property="og:image" content="https:\/\/algoart-composition-plugin\.onrender\.com\/share\/image\?c=[^"]+&amp;pv=2"/);
+ assert(!html.includes('social-card.png'));
+ // A human can still open the exact original work from the landing page.
+ assert.match(html,/location\.replace\(/);
+ assert.match(html,/southernadd-cmyk\.github\.io\/algoart\/\?c=/);
+ const image=await fetch(origin+'/share/image?c='+token+'&pv=2');
+ assert.equal(image.status,200);
+ assert.match(image.headers.get('content-type'),/image\/jpeg/);
 });
 test('OG image uses the exact real-engine share token and image/jpeg bytes',async()=>{
  const r=await fetch(origin+'/share/image?c='+token);
