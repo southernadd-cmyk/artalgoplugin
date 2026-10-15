@@ -48,7 +48,7 @@ test('server HTML exposes real crawler-visible artwork-specific card and click-t
  assert.match(html,/Oil Paint/);
  assert.match(html,/ART-20261015-%PHI-7/);
  assert.match(html,/location\.replace\(/);
- assert.doesNotMatch(html,/<meta\\s+http-equiv=[\"']refresh/i,
+ assert.doesNotMatch(html,/<meta\s+http-equiv=["']refresh/i,
    'Meta/Threads must not be sent to GitHub Pages by an HTML redirect');
  assert.doesNotMatch(html,/<link[^>]*rel=[\"']canonical[^>]*github\.io/i);
  assert.equal(r.redirected,false,'Crawler must receive Open Graph on original 200 URL');
