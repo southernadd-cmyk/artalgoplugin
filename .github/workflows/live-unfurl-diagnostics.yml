@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tests/live-unfurl-diagnostics.mjs'
+      - 'tests/live-preload-diagnostics.mjs'
       - '.github/workflows/live-unfurl-diagnostics.yml'
   workflow_dispatch:
 permissions:
@@ -18,4 +19,4 @@ jobs:
         with:
           node-version: '22'
       - name: Check real deployed Render social preview with three client agents
-        run: node tests/live-unfurl-diagnostics.mjs
+        run: node tests/live-preload-diagnostics.mjs
